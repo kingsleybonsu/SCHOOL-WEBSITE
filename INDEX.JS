@@ -1,147 +1,179 @@
 /*  STICKY NAVBAR  */
-    const navbar = document.getElementById('navbar');
+const navbar = document.getElementById("navbar");
 
-    window.addEventListener('scroll', () => {
-      navbar.classList.toggle('scrolled', window.scrollY > 60);
+window.addEventListener("scroll", () => {
+  navbar.classList.toggle("scrolled", window.scrollY > 60);
+});
+
+/* MOBILE MENU */
+const hamburger = document.getElementById("hamburger");
+const mobileMenu = document.getElementById("mobileMenu");
+
+hamburger.addEventListener("click", () => {
+  hamburger.classList.toggle("active");
+  mobileMenu.classList.toggle("open");
+  document.body.style.overflow = mobileMenu.classList.contains("open")
+    ? "hidden"
+    : "";
+});
+
+mobileMenu.querySelectorAll("a").forEach((link) => {
+  link.addEventListener("click", () => {
+    hamburger.classList.remove("active");
+    mobileMenu.classList.remove("open");
+    document.body.style.overflow = "";
+  });
+});
+
+/* INTERSECTION OBSERVER — SCROLL REVEAL */
+const revealElements = document.querySelectorAll(
+  ".reveal, .reveal-left, .reveal-right, .reveal-scale",
+);
+
+const revealObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("revealed");
+        revealObserver.unobserve(entry.target);
+      }
     });
+  },
+  {
+    threshold: 0.15,
+    rootMargin: "0px 0px -40px 0px",
+  },
+);
 
-    /* MOBILE MENU */
-    const hamburger = document.getElementById('hamburger');
-    const mobileMenu = document.getElementById('mobileMenu');
+revealElements.forEach((el) => revealObserver.observe(el));
 
-    hamburger.addEventListener('click', () => {
-      hamburger.classList.toggle('active');
-      mobileMenu.classList.toggle('open');
-      document.body.style.overflow = mobileMenu.classList.contains('open') ? 'hidden' : '';
+/* COUNTER ANIMATION */
+const counters = document.querySelectorAll(".stat-number");
+let countersAnimated = false;
+
+const counterObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting && !countersAnimated) {
+        countersAnimated = true;
+        counters.forEach((counter) => {
+          const target = +counter.dataset.target;
+          const suffix = counter.dataset.suffix || "";
+          const duration = 2000;
+          const start = performance.now();
+
+          function update(now) {
+            const elapsed = now - start;
+            const progress = Math.min(elapsed / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            counter.textContent = Math.floor(eased * target) + suffix;
+            if (progress < 1) requestAnimationFrame(update);
+          }
+
+          requestAnimationFrame(update);
+        });
+      }
     });
+  },
+  { threshold: 0.5 },
+);
 
-    mobileMenu.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        hamburger.classList.remove('active');
-        mobileMenu.classList.remove('open');
-        document.body.style.overflow = '';
-      });
-    });
+const statsSection = document.getElementById("stats");
+if (statsSection) counterObserver.observe(statsSection);
 
-    /* INTERSECTION OBSERVER — SCROLL REVEAL */
-    const revealElements = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-scale');
+/* TESTIMONIAL SLIDER */
+const track = document.getElementById("testimonialTrack");
+const slides = track.querySelectorAll(".testimonial-slide");
+const dotsContainer = document.getElementById("testimonialDots");
+let currentSlide = 0;
+let autoSlideInterval;
 
-    const revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('revealed');
-          revealObserver.unobserve(entry.target);
-        }
-      });
-    }, {
-      threshold: 0.15,
-      rootMargin: '0px 0px -40px 0px'
-    });
+slides.forEach((_, i) => {
+  const dot = document.createElement("button");
+  dot.classList.add("testimonial-dot");
+  if (i === 0) dot.classList.add("active");
+  dot.addEventListener("click", () => goToSlide(i));
+  dotsContainer.appendChild(dot);
+});
 
-    revealElements.forEach(el => revealObserver.observe(el));
+const dots = dotsContainer.querySelectorAll(".testimonial-dot");
 
-    /* COUNTER ANIMATION */
-    const counters = document.querySelectorAll('.stat-number');
-    let countersAnimated = false;
+function goToSlide(index) {
+  currentSlide = index;
+  track.style.transform = `translateX(-${index * 100}%)`;
+  dots.forEach((d, i) => d.classList.toggle("active", i === index));
+}
 
-    const counterObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting && !countersAnimated) {
-          countersAnimated = true;
-          counters.forEach(counter => {
-            const target = +counter.dataset.target;
-            const suffix = counter.dataset.suffix || '';
-            const duration = 2000;
-            const start = performance.now();
+document.getElementById("prevTestimonial").addEventListener("click", () => {
+  goToSlide(currentSlide === 0 ? slides.length - 1 : currentSlide - 1);
+  resetAutoSlide();
+});
 
-            function update(now) {
-              const elapsed = now - start;
-              const progress = Math.min(elapsed / duration, 1);
-              const eased = 1 - Math.pow(1 - progress, 3);
-              counter.textContent = Math.floor(eased * target) + suffix;
-              if (progress < 1) requestAnimationFrame(update);
-            }
+document.getElementById("nextTestimonial").addEventListener("click", () => {
+  goToSlide(currentSlide === slides.length - 1 ? 0 : currentSlide + 1);
+  resetAutoSlide();
+});
 
-            requestAnimationFrame(update);
-          });
-        }
-      });
-    }, { threshold: 0.5 });
+function startAutoSlide() {
+  autoSlideInterval = setInterval(() => {
+    goToSlide(currentSlide === slides.length - 1 ? 0 : currentSlide + 1);
+  }, 6000);
+}
 
-    const statsSection = document.getElementById('stats');
-    if (statsSection) counterObserver.observe(statsSection);
+function resetAutoSlide() {
+  clearInterval(autoSlideInterval);
+  startAutoSlide();
+}
 
-    /* TESTIMONIAL SLIDER */
-    const track = document.getElementById('testimonialTrack');
-    const slides = track.querySelectorAll('.testimonial-slide');
-    const dotsContainer = document.getElementById('testimonialDots');
-    let currentSlide = 0;
-    let autoSlideInterval;
+startAutoSlide();
 
-    slides.forEach((_, i) => {
-      const dot = document.createElement('button');
-      dot.classList.add('testimonial-dot');
-      if (i === 0) dot.classList.add('active');
-      dot.addEventListener('click', () => goToSlide(i));
-      dotsContainer.appendChild(dot);
-    });
+/* ACTIVE NAV LINK ON SCROLL */
+const sections = document.querySelectorAll("section[id]");
+const navLinks = document.querySelectorAll(".nav-link");
 
-    const dots = dotsContainer.querySelectorAll('.testimonial-dot');
-
-    function goToSlide(index) {
-      currentSlide = index;
-      track.style.transform = `translateX(-${index * 100}%)`;
-      dots.forEach((d, i) => d.classList.toggle('active', i === index));
+window.addEventListener("scroll", () => {
+  let current = "";
+  sections.forEach((section) => {
+    if (window.scrollY >= section.offsetTop - 120) {
+      current = section.getAttribute("id");
     }
+  });
+  navLinks.forEach((link) => {
+    link.classList.toggle(
+      "active",
+      link.getAttribute("href") === `#${current}`,
+    );
+  });
+});
 
-    document.getElementById('prevTestimonial').addEventListener('click', () => {
-      goToSlide(currentSlide === 0 ? slides.length - 1 : currentSlide - 1);
-      resetAutoSlide();
-    });
+/*  FORM HANDLERS */
+document.getElementById("contactForm").addEventListener("submit", (e) => {
+  e.preventDefault();
 
-    document.getElementById('nextTestimonial').addEventListener('click', () => {
-      goToSlide(currentSlide === slides.length - 1 ? 0 : currentSlide + 1);
-      resetAutoSlide();
-    });
+  const form = e.target;
+  const name = form.name.value.trim();
+  const email = form.email.value.trim();
+  const phone = form.phone.value.trim();
+  const message = form.message.value.trim();
 
-    function startAutoSlide() {
-      autoSlideInterval = setInterval(() => {
-        goToSlide(currentSlide === slides.length - 1 ? 0 : currentSlide + 0);
-      }, 6000);
-    }
+  const whatsappNumber = "233535901446";
+  const whatsappText = `Hello Western Link Educational Complex,\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}`;
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappText)}`;
 
-    function resetAutoSlide() {
-      clearInterval(autoSlideInterval);
-      startAutoSlide();
-    }
+  window.open(whatsappUrl, "_blank");
+  form.reset();
+});
 
-    startAutoSlide();
+document.getElementById("newsletterForm").addEventListener("submit", (e) => {
+  e.preventDefault();
 
-    /* ACTIVE NAV LINK ON SCROLL */
-    const sections = document.querySelectorAll('section[id]');
-    const navLinks = document.querySelectorAll('.nav-link');
+   const whatsappNumber = "233535901446";
+  const whatsappText = `Hello Western Link Educational Complex,\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone}\nMessage: ${message}`;
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappText)}`;
 
-    window.addEventListener('scroll', () => {
-      let current = '';
-      sections.forEach(section => {
-        if (window.scrollY >= section.offsetTop - 120) {
-          current = section.getAttribute('id');
-        }
-      });
-      navLinks.forEach(link => {
-        link.classList.toggle('active', link.getAttribute('href') === `#${current}`);
-      });
-    });
+  window.open(whatsappUrl, "_blank");
+  form.reset();
 
-    /*  FORM HANDLERS (demo) */
-    document.getElementById('contactForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      alert('Thank you! Your message has been received. We will get back to you within 24 hours.');
-      e.target.reset();
-    });
-
-    document.getElementById('newsletterForm').addEventListener('submit', (e) => {
-      e.preventDefault();
-      alert('Thank you for subscribing to our newsletter!');
-      e.target.reset();
-    });
+  // alert("Thank you for subscribing to our newsletter!");
+   e.target.reset();
+});
